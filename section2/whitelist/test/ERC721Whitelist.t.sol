@@ -41,6 +41,12 @@ contract ERC721WhitelistTest is Test {
     // TODO:
     // 1. Prank user1
     // 2. Mint to user1 with wrong index, should revert with "ERC721Whitelist: Invalid proof."
+    vm.startPrank(user1.addr);
+    uint256 indexInLeaf = 1;
+    bytes32[] memory proof = m.getProof(leaf, indexInLeaf);
+    vm.expectRevert(bytes("ERC721Whitelist: Invalid proof."));
+    whitelist.mint(proof);
+    vm.stopPrank();
   }
 
   function test_mint_fail_when_duplicate() public {
@@ -48,5 +54,15 @@ contract ERC721WhitelistTest is Test {
     // 1. Prank user1
     // 2. Mint to user1
     // 3. Mint to user1 again, should revert with "ERC721Whitelist: Already claimed." 
+
+    vm.startPrank(user1.addr);
+    uint256 indexInLeaf = 0;
+    bytes32[] memory proof = m.getProof(leaf, indexInLeaf);
+    whitelist.mint(proof);
+
+    vm.expectRevert(bytes("ERC721Whitelist: Already claimed."));
+    whitelist.mint(proof);
+
+    vm.stopPrank();
   }
 }

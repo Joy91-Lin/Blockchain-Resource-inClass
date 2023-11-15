@@ -25,5 +25,10 @@ function mint(bytes32[] memory _merkleProof) external {
     // 2. Check if the user has already claimed the token
     // 3. Mint the token to the user
     // 4. Mark the user as claimed
+
+    require(inWhitelist(_merkleProof, msg.sender), "ERC721Whitelist: Invalid proof.");
+    require(claimed[msg.sender] == false,"ERC721Whitelist: Already claimed.");
+    _mint(msg.sender, 0);
+    claimed[msg.sender] = true;
   }
 }
