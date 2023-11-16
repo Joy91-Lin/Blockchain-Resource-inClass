@@ -40,5 +40,18 @@ contract TransparentTest is Test {
     // 2. assert if user call upgradeToAndCall will revert
     // 3. upgrade to V2
     // 4. assert user call upgradeToAndCall will return "23573451"
+
+    proxyWallet = MultiSigWallet(address(proxy));
+    assertEq(proxyWallet.VERSION(), "0.0.1");
+
+    vm.prank(admin);
+    ITransparentUpgradeableProxy(address(proxy)).upgradeToAndCall(
+      address(walletV2),
+      abi.encodeWithSelector(walletV2.v2Initialize.selector)
+    );
+    proxyWalletV2 = MultiSigWalletV2(address(proxy));
+    assertEq(proxyWalletV2.VERSION(), "0.0.2");
+
+    proxyWalletV2.upgradeToAndCall_23573451();
   }
 }

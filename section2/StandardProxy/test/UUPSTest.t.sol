@@ -40,11 +40,39 @@ contract UUPSTest is Test {
     // 2. upgrade to UUPSMultiSigWalletV2 by calling updateCodeAddress
     // 3. assert that proxyWallet.VERSION() is "0.0.2"
     // 4. assert updateCodeAddress is gone by calling updateCodeAddress with low-level call or UUPSMutliSigWallet
+    vm.startPrank(admin);
+    proxyWallet = UUPSMultiSigWallet(address(proxy));
+    assertEq(proxyWallet.VERSION(), "0.0.1");
+
+    proxyWallet.updateCodeAddress(address(walletV2), "");
+    proxyWalletV2 = UUPSMultiSigWalletV2(address(proxy));
+    assertEq(proxyWalletV2.VERSION(), "0.0.2");
+
+    // low-level call
+    NoProxiableContract noProxiableContract = new NoProxiableContract();
+    vm.expectRevert();
+    address(proxyWalletV2).call(
+    abi.encodeWithSignature("updateCodeAddress(address,bytes)", address(noProxiableContract), "")
+    );
+
+    // UUPSMutliSigWallet
+    // vm.expectRevert();
+    // proxyWallet.updateCodeAddress(address(walletV2), abi.encodeWithSelector(walletV2.v2Initialize.selector));
+
+
+    vm.stopPrank();
+    
   }
 
   function test_UUPS_updateCodeAddress_revert_if_no_proxiableUUID() public {
     // TODO:
     // 1. deploy NoProxiableContract
     // 2. upgrade to NoProxiableContract by calling updateCodeAddress, which should revert
+    vm.startPrank(admin);
+    NoProxiableContract noProxiableContract = new NoProxiableContract();
+    proxyWallet = UUPSMultiSigWallet(address(proxy));
+    vm.expectRevert();
+    proxyWallet.updateCodeAddress(address(noProxiableContract), "");
+    vm.stopPrank();
   }
 }

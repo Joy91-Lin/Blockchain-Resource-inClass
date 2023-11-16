@@ -11,6 +11,7 @@ contract BeaconProxy is Slots, Proxy {
 
   constructor(address _beacon) {
     // TODO: set beacon address at BEACON_SLOT
+    _setSlotToAddress(BEACON_SLOT, _beacon);
   }
 
   function _getBeacon() internal view returns (address) {
@@ -19,6 +20,7 @@ contract BeaconProxy is Slots, Proxy {
 
   function _implemenation() internal view returns (address) {
     // TODO: return implementation address from beacon
+    return IBeacon(_getBeacon()).implementation();
   }
 
   fallback() external payable {

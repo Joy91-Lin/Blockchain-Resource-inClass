@@ -44,17 +44,40 @@ contract ERC1967ProxyTest is Test {
   function test_ERC1967_avoid_storage_collision() public {
     // TODO:
     // 1. check if proxy is correctly proxied,  assert that proxyWallet.VERSION() is "0.0.1"
+    proxyWallet = MultiSigWallet(address(proxy));
+    assertEq(proxyWallet.VERSION(), "0.0.1");
     // 2. test upgradeToAndCall won't result in storage collision
+    vm.prank(admin);
+    proxy.upgradeToAndCall(
+      address(walletV2),
+      abi.encodeWithSelector(walletV2.v2Initialize.selector, [alice, bob, carol])
+    );
+    assertEq(proxyWallet.VERSION(), "0.0.2");
     // 3. assert contract is updated
   }
 
   function test_ERC1967_onlyAdmin_can_upgrade() public {
     // TODO: test if only admin could upgrade this proxy
+    vm.expectRevert();
+    proxy.upgradeToAndCall(
+      address(walletV2),
+      abi.encodeWithSelector(walletV2.v2Initialize.selector, [alice, bob, carol])
+    );
   }
 
   function test_call_upgradeToAndCall_23573451() public {
     // TODO:
     // 1. upgrade to V2 and initiliaze
     // 2. test if you could call upgradeToAndCall_23573451()
+    vm.prank(admin);
+    proxy.upgradeToAndCall(
+      address(walletV2),
+      abi.encodeWithSelector(walletV2.v2Initialize.selector)
+    );
+
+    vm.prank(alice);
+    proxyWalletV2 = MultiSigWalletV2(address(proxy));
+    vm.expectRevert();
+    proxyWalletV2.upgradeToAndCall_23573451();
   }
 }
