@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import "forge-std/Test.sol";
 import { Bank } from "../contracts/Bank.sol";
 import { Attack } from "../contracts/Attack.sol";
+import "forge-std/console.sol";
 
 contract BankTest is Test {
     Bank public bank;
@@ -27,7 +28,16 @@ contract BankTest is Test {
     function test_attack() public {
         // 1. Deploy attack contract
         // 2. Exploit the bank
+        
+        vm.startPrank(attacker);
+        Attack attack = new Attack(address(bank));
+        (bool s,) = address(attack).call{ value: 1 ether }("");
+        assertEq(s, true);
 
+        attack.attack();
+        vm.stopPrank();
+        
+        assertEq(address(attack).balance, 11 ether);
         assertEq(address(bank).balance, 0);
     }
 }

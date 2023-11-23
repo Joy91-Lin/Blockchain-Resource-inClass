@@ -46,12 +46,52 @@ contract Liquidator is IUniswapV2Callee, Ownable {
 
     function uniswapV2Call(address sender, uint256 amount0, uint256 amount1, bytes calldata data) external override {
         // TODO
+        // status : 80 USDC
+        // call fakeLendingProtocol.liquidatePosition()
+        // repay eth to uniswap pool
+        
+        require(sender == address(this), "Sender must be this contract");
+        require(amount0 == 0 || amount1 == 0, "One of the amount must be 0");
+
+        // 1. decode data and get pair address
+        (address[] memory path) = abi.decode(data, (address[]));
+        address pair = IUniswapV2Factory(_UNISWAP_FACTORY).getPair(path[0], path[1]);
+        require(msg.sender == pair, "Sender must be uniswap pair");
+
+        address tokenDoLoanInLendingProtocol = path[1];
+        address tokenRepayToUniswapPool = path[0];
+
+        // 2. liquidatePosition() will use usdc to Lend and get eth,so we need to approve usdc to lending protocol
+        IERC20(tokenDoLoanInLendingProtocol).approve(_FAKE_LENDING_PROTOCOL, amount1);
+        IFakeLendingProtocol(_FAKE_LENDING_PROTOCOL).liquidatePosition();
+
+        // 3. calculate repay amount
+        uint256[] memory repayAmount = IUniswapV2Router01(_UNISWAP_ROUTER).getAmountsIn(amount1, path);
+
+        // 4. cause pair is WETH/USDC, we need to convert eth to weth
+        IWETH(tokenRepayToUniswapPool).deposit{value: repayAmount[0]}();
+
+        // 5. repay eth to uniswap pool
+        IERC20(tokenRepayToUniswapPool).transfer(pair, repayAmount[0]);
+
     }
+
+    // USDC: pair - > Liquidator contract - >FakeLendingProtocol contract
+    // ETH: FakeLendingProtocol contract - > Liquidator contract - > WETH -> pair
 
     // we use single hop path for testing
     function liquidate(address[] calldata path, uint256 amountOut) external {
         require(amountOut > 0, "AmountOut must be greater than 0");
         // TODO
+        // To do flash swap, we need to call swap function in pair contract and pass data. 
+        // Data.length must bigger than 0 and it will pass to uniswapV2Call function
+
+        // 1. use IUniswapV2Factory to get Pool address -> pair
+        address pair = IUniswapV2Factory(_UNISWAP_FACTORY).getPair(path[0], path[1]);
+
+        // 2. pass essential data for uniswapV2Call function. data.length must bigger than 0 
+        bytes memory data = abi.encode(path);
+        IUniswapV2Pair(pair).swap(0, amountOut, address(this), data);
     }
 
     receive() external payable {}
