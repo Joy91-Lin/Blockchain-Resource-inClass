@@ -25,7 +25,24 @@ contract GovernanceScript is Script {
   function delegateVotingPower() public {
     // TODO: Distribute Comp into two addresses, delegate one address to yourself,
     // and delegate the other address to your team member.
+    address myAddress = 0x45C074804A10aA23f7927650168A9544b21e4e7d;
+    address AndreaAddress = 0x139DD0dAfa76958010063e06F1b94281632b46eA;
 
+    uint256 account3_pk = vm.envUint("PRIVATE_KEY_ACCOUNT3");
+    vm.startBroadcast(account3_pk);
+    comp.delegate(address(myAddress));
+    vm.stopBroadcast();
+
+    uint256 account2_pk = vm.envUint("PRIVATE_KEY_ACCOUNT2");
+    vm.startBroadcast(account2_pk);
+
+
+    comp.delegate(address(AndreaAddress));
+
+    vm.stopBroadcast();
+    
+    uint votes = comp.getCurrentVotes(address(myAddress));
+    console.log("myAddress votes: ", votes);
   }
 
   function propose() public {

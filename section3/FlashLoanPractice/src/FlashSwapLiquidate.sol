@@ -19,9 +19,26 @@ contract FlashSwapLiquidate is IUniswapV2Callee {
   
   function uniswapV2Call(address sender, uint256 amount0, uint256 amount1, bytes calldata data) external override {
     // TODO
+    address borrower = abi.decode(data, (address));
+    USDC.approve(address(cUSDC), amount1);
+    cUSDC.liquidateBorrow(borrower, amount1, cDAI);
+
+    uint256 cDAIBalance = cDAI.balanceOf(address(this));
+    cDAI.redeem(cDAIBalance);
+
+    address[] memory path = new address[](2);
+        path[0] = address(DAI);
+        path[1] = address(USDC);
+    uint[] memory amounts = router.getAmountsIn(amount1, path);
+    
+    uint256 DaiBalance = DAI.balanceOf(address(this));
+    DAI.transfer(address(msg.sender), amounts[0]);
   }
 
   function liquidate(address borrower, uint256 amountOut) external {
     // TODO
+    address usdcDAIPair = factory.getPair(address(USDC), address(DAI));
+
+    IUniswapV2Pair(usdcDAIPair).swap(0, amountOut, address(this), abi.encode(address(borrower)));
   }
 }
